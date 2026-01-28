@@ -11,8 +11,6 @@ export default defineConfig(({ mode }) => {
     define: {
       // Injects the API key. Defaults to "" if undefined to prevent crash.
       'process.env.API_KEY': JSON.stringify(env.API_KEY || ""),
-      // Polyfill 'global' for PeerJS
-      'global': 'window',
     },
   };
 });

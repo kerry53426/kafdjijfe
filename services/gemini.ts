@@ -1,11 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BoardState, AiResponse, Player, BOARD_SIZE, LiarAiResponse } from '../types';
 
-// Initialize Gemini
-// Use a fallback empty string to ensure the constructor doesn't crash the entire app on load
-// if the environment variable is missing. The API calls will simply fail gracefully later.
-const apiKey = process.env.API_KEY || "";
-const ai = new GoogleGenAI({ apiKey });
+// Lazily init AI to prevent crash on module load if something is wrong
+const getAI = () => {
+    const apiKey = process.env.API_KEY || "";
+    if (!apiKey) {
+        console.warn("API Key is missing for GoogleGenAI");
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 const getOccupiedCells = (board: BoardState) => {
   const cells = [];
@@ -24,8 +27,8 @@ export const getXiaoLinMove = async (
   currentPlayer: Player
 ): Promise<AiResponse> => {
   try {
-    if (!apiKey) throw new Error("API Key missing");
-
+    const ai = getAI(); // Init here
+    
     const occupied = getOccupiedCells(board);
     
     // Fallback for empty board (first move) to save time/tokens if AI is black
@@ -124,7 +127,7 @@ export const getXiaoLinLiarMove = async (
     persona: string = "Xiao Lin"
 ): Promise<LiarAiResponse> => {
     try {
-        if (!apiKey) throw new Error("API Key missing");
+        const ai = getAI(); // Init here
         
         let personalityDesc = "";
         if (persona === "Xiao Lin") {
@@ -213,7 +216,7 @@ export const getXiaoLinArcheryReaction = async (
   isWinning: boolean
 ): Promise<string> => {
   try {
-    if (!apiKey) throw new Error("API Key missing");
+    const ai = getAI(); // Init here
 
     const prompt = `
       You are playing an Archery game. You are Xiao Lin (playful, cute, speaks Traditional Chinese).
