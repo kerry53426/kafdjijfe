@@ -2,8 +2,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { BoardState, AiResponse, Player, BOARD_SIZE, LiarAiResponse } from '../types';
 
 // Initialize Gemini
-// NOTE: API KEY is managed via process.env.API_KEY as per instructions.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use a fallback empty string to ensure the constructor doesn't crash the entire app on load
+// if the environment variable is missing. The API calls will simply fail gracefully later.
+const apiKey = process.env.API_KEY || "";
+const ai = new GoogleGenAI({ apiKey });
 
 const getOccupiedCells = (board: BoardState) => {
   const cells = [];
@@ -22,6 +24,8 @@ export const getXiaoLinMove = async (
   currentPlayer: Player
 ): Promise<AiResponse> => {
   try {
+    if (!apiKey) throw new Error("API Key missing");
+
     const occupied = getOccupiedCells(board);
     
     // Fallback for empty board (first move) to save time/tokens if AI is black
@@ -120,6 +124,8 @@ export const getXiaoLinLiarMove = async (
     persona: string = "Xiao Lin"
 ): Promise<LiarAiResponse> => {
     try {
+        if (!apiKey) throw new Error("API Key missing");
+        
         let personalityDesc = "";
         if (persona === "Xiao Lin") {
             personalityDesc = "Role: Xiao Lin (Playful, flirty, smart). Speaks in Traditional Chinese (Taiwan), cute tone.";
@@ -207,6 +213,8 @@ export const getXiaoLinArcheryReaction = async (
   isWinning: boolean
 ): Promise<string> => {
   try {
+    if (!apiKey) throw new Error("API Key missing");
+
     const prompt = `
       You are playing an Archery game. You are Xiao Lin (playful, cute, speaks Traditional Chinese).
       You just shot an arrow and scored ${score} points (out of 10).
