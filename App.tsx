@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BoardState, Player, Move, GameMode, GameStatus, UserProfile, ChatMessage, BoardTheme, PieceTheme, GameType } from './types';
+import { BoardState, Player, Move, GameMode, GameStatus, UserProfile, ChatMessage, BoardTheme, PieceTheme, GameType, LiarAction } from './types';
 import { createEmptyBoard, checkWin, checkThreat } from './utils/gameLogic';
 import { getXiaoLinMove } from './services/gemini';
 import { Board } from './components/Board';
@@ -174,6 +174,7 @@ export default function App() {
   const [targetPeerId, setTargetPeerId] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
   const [myOnlineColor, setMyOnlineColor] = useState<Player>('black'); 
+  const [liarAction, setLiarAction] = useState<LiarAction | null>(null);
 
   // Initialize
   useEffect(() => {
@@ -209,7 +210,8 @@ export default function App() {
      } else if (gameMode === GameMode.PVE && activeGame === GameType.ROULETTE) {
         addMessageToHistory("嘿嘿，要來玩懲罰轉盤嗎？我已經想好要怎麼懲罰你了😈", false, 'opponent');
      } else {
-        setChatHistory([]); // Clear chat on mode switch? Optional.
+        // Clear chat on mode switch? Optional.
+        // setChatHistory([]); 
         setOpponentBubble(null);
      }
   }, [gameMode, activeGame]);
@@ -283,6 +285,8 @@ export default function App() {
         resetGame(true);
       } else if (data.type === 'chat') {
         addMessageToHistory(data.content, data.isSticker, 'opponent');
+      } else if (data.type === 'liar_action') {
+        setLiarAction(data.action);
       }
     });
     
@@ -384,6 +388,10 @@ export default function App() {
     setMyBubble(null);
     setOpponentBubble(null);
 
+    // If Liar's Dice, we might need a signal to reset that component specifically,
+    // but usually mode switch handles it.
+    // Ideally, pass a reset trigger prop.
+
     if (gameMode === GameMode.ONLINE && conn && !silent) {
         conn.send({ type: 'restart' });
     }
@@ -430,6 +438,12 @@ export default function App() {
   const handleSendMessage = (content: string, isSticker: boolean) => {
       addMessageToHistory(content, isSticker, 'me');
       if (gameMode === GameMode.ONLINE && conn) conn.send({ type: 'chat', content, isSticker });
+  };
+  
+  const handleSendLiarAction = (action: LiarAction) => {
+      if (gameMode === GameMode.ONLINE && conn) {
+          conn.send({ type: 'liar_action', action });
+      }
   };
 
   return (
@@ -579,7 +593,11 @@ export default function App() {
              {activeGame === GameType.LIARS_DICE && (
                  <LiarsDiceGame 
                     onMessage={(msg) => addMessageToHistory(msg, false, 'opponent')}
-                    isPve={gameMode === GameMode.PVE}
+                    gameMode={gameMode}
+                    onSendAction={handleSendLiarAction}
+                    incomingAction={liarAction}
+                    myProfile={myProfile}
+                    opponentProfile={opponentProfile}
                  />
              )}
 

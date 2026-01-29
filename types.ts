@@ -77,6 +77,7 @@ export interface DicePlayer {
   dice: number[];
   diceCount: number;
   avatar?: string;
+  isRemote?: boolean; // True if this is the online opponent
 }
 
 export interface DiceState {
@@ -94,6 +95,19 @@ export interface LiarAiResponse {
   quantity?: number;
   face?: number;
   message: string;
+}
+
+// Actions sent via PeerJS for Liar's Dice
+export type LiarActionType = 'BID' | 'CALL' | 'REVEAL' | 'NEW_ROUND' | 'SYNC_STATE';
+
+export interface LiarAction {
+    type: LiarActionType;
+    payload?: {
+        quantity?: number;
+        face?: number;
+        dice?: number[]; // For REVEAL
+        diceCount?: number; // For keeping track
+    };
 }
 
 // --- Roulette Types ---
